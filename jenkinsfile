@@ -1,0 +1,40 @@
+---
+- name: Deploy static website to web servers
+  hosts: webservers
+  become: yes
+  gather_facts: yes
+ 
+  tasks:
+ 
+    - name: Ensure Apache is installed (Ubuntu/Debian)
+      ansible.builtin.apt:
+        name: apache2
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+ 
+    - name: Ensure Apache (httpd) is installed (Amazon/RHEL)
+      ansible.builtin.yum:
+        name: httpd
+        state: present
+      when: ansible_os_family == "RedHat" or ansible_distribution == "Amazon"
+ 
+    - name: Copy index.html from web-src to server
+      ansible.builtin.copy:
+        src: "web-src/index.html"
+        dest: "/var/www/html/index.html"
+        owner: www-data
+        group: www-data
+        mode: "0644"
+ 
+    - name: Restart Apache on Debian/Ubuntu
+      ansible.builtin.service:
+        name: apache2
+        state: restarted
+      when: ansible_os_family == "Debian"
+ 
+    - name: Restart Apache on Amazon/RHEL
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
+      when: ansible_os_family == "RedHat" or ansible_distribution == "Amazon"
